@@ -76,18 +76,18 @@ def get_breadcrumb(product_soup: BeautifulSoup) -> dict:
             span_cache = []
             for span in spans:
                 if span.string not in span_cache:
-                    span_cache.append(span.string)
+                    span_cache.append(span.string.strip())
             breadcrumb.append(", ".join(span_cache))
         if crumb.string:
-            breadcrumb.append(crumb.string)
+            breadcrumb.append(crumb.string.strip())
     breadcrumb = (" | ").join(breadcrumb)
 
-    return {"breadcrumb": breadcrumb}
+    return {"Breadcrumb": breadcrumb}
 
 
 def get_product_title(product_soup: BeautifulSoup) -> dict:
     h2_tag = product_soup.find("h2", class_="product_title")
-    return {"title": h2_tag.string.strip()}
+    return {"Title": h2_tag.string.strip()}
 
 
 def get_product_info(product_soup: BeautifulSoup) -> dict:
@@ -103,7 +103,11 @@ def get_product_info(product_soup: BeautifulSoup) -> dict:
             continue
         split_string = _.string.strip().split(":")
         if len(split_string) > 1:
-            key_values[split_string[0].strip()] = split_string[1].strip()
+            info_title_split = split_string[0].lower().split(' ')
+            if ('page' in info_title_split) or ('pages' in info_title_split):
+                key_values['Number Of Pages'] = split_string[1].strip()
+            else:
+                key_values[split_string[0].strip().title()] = split_string[1].strip()
     return key_values
 
 
@@ -117,7 +121,7 @@ def get_images_urls(product_soup: BeautifulSoup) -> dict:
         image_urls.append(img["href"])
     image_urls_dict = {}
     for _ in range(len(image_urls)):
-        image_urls_dict[f"image {_+1}"] = image_urls[_]
+        image_urls_dict[f"Image {_+1}"] = image_urls[_]
     return image_urls_dict
 
 
@@ -134,7 +138,7 @@ def get_price(product_soup: BeautifulSoup) -> dict:
             else:
                 x.append(_.strip())
         price_cache.append((" ").join(x))
-    return {"price": price_cache[0], "sale price": price_cache[1]}
+    return {"Price": price_cache[0].strip(), "Sale Price": price_cache[1].strip()}
 
 
 def get_total_page_number(brand_products_page_soup: BeautifulSoup) -> str:
@@ -261,3 +265,8 @@ for _ in brands_list:
     except Exception as E:
         print("\n\n")
         pp.pprint({"error on url": product_url, "error": E})
+
+
+df = get_pickled_df()
+
+df.to_excel('data.xlsx', index=False)
